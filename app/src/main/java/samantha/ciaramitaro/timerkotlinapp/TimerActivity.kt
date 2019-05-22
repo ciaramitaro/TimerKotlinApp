@@ -1,8 +1,11 @@
 package samantha.ciaramitaro.timerkotlinapp
 
+import android.app.AlarmManager
+import android.app.PendingIntent
+import android.content.Context
+import android.content.Intent
 import android.os.Bundle
 import android.os.CountDownTimer
-import android.support.design.widget.Snackbar
 import android.support.v7.app.AppCompatActivity;
 import android.view.Menu
 import android.view.MenuItem
@@ -10,8 +13,30 @@ import android.view.MenuItem
 import kotlinx.android.synthetic.main.activity_timer.*
 import kotlinx.android.synthetic.main.content_main.*
 import samantha.ciaramitaro.timerkotlinapp.util.PrefUtil
+import java.util.*
 
 class TimerActivity : AppCompatActivity() {
+    companion object{
+        fun setAlarm(context: Context, nowSeconds: Long, secondsRemaining: Long): Long{
+            val wakeUpTime = (nowSeconds + secondsRemaining) * 1000
+            val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+            val intent = Intent(context, TimerExperiedReceiver::class.java)
+            val pendingIntent = PendingIntent.getBroadcast(context, 0, intent, 0)
+            alarmManager.setExact(AlarmManager.RTC_WAKEUP, wakeUpTime, pendingIntent)
+            PrefUtil.setAlarmSetTime(nowSeconds, context)
+            return wakeUpTime
+        }
+        fun removeAlarm(context: Context){
+            val intent = Intent(context, TimerExperiedReceiver::class.java)
+            val pendingIntent = PendingIntent.getBroadcast(context, 0, intent, 0)
+            val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+            alarmManager.cancel(pendingIntent)
+            PrefUtil.setAlarmSetTime(0, context)
+        }
+
+        val nowSeconds: Long
+            get() = Calendar.getInstance().timeInMillis / 1000
+    }
 
     enum class TimerState{
         Stopped, Paused, Running
@@ -88,6 +113,8 @@ class TimerActivity : AppCompatActivity() {
     private fun onTimerFinished(){
         timerState= TimerState.Stopped
 
+        //set the length of the timer to be the one set in SettingsActivity
+        //if the length was changed when the timer was running
         setNewTimerLength()
         progress_countdown.progress=0
         PrefUtil.setSecondsRemaining(timerLengthSeconds, this)
@@ -122,13 +149,9 @@ class TimerActivity : AppCompatActivity() {
         val minutesUntilFinished = secondsRemaining / 60
         val secondsInMinuteUntilFinished = secondsRemaining - minutesUntilFinished * 60
         val secondsStr = secondsInMinuteUntilFinished.toString()
-        textView_countdown.text = "$minutesUntilFinished:${if (secondsStr.length == 2) secondsStr else "0" + secondsStr}"
+        textView_countdown.text = "$minutesUntilFinished:${if (secondsStr.length == 2) secondsStr
+        else "0" + secondsStr}"
         progress_countdown.progress = (timerLengthSeconds - secondsRemaining).toInt()
-    }
-    override fun onCreateOptionsMenu(menu: Menu): Boolean {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        menuInflater.inflate(R.menu.menu_main, menu)
-        return true
     }
     private fun updateButtons(){
         when (timerState) {
@@ -148,6 +171,11 @@ class TimerActivity : AppCompatActivity() {
                 fab_stop.isEnabled = true
             }
         }
+    }
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        menuInflater.inflate(R.menu.menu_main, menu)
+        return true
     }
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         // Handle action bar item clicks here. The action bar will

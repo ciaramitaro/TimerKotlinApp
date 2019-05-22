@@ -14,6 +14,7 @@ object PrefUtil {
 
         fun getPreviousTimerLengthSeconds(context: Context): Long{
             val preferences= PreferenceManager.getDefaultSharedPreferences(context)
+            //This gets data with Key-value pair. Parameters are key, default value.
             return preferences.getLong(PREVIOUS_TIMER_LENGTH_SECONDS_ID, 0)
         }
         fun setPreviousTimerLengthSeconds(seconds : Long, context: Context){
@@ -45,5 +46,17 @@ object PrefUtil {
             val editor = PreferenceManager.getDefaultSharedPreferences(context).edit()
             editor.putLong(SECONDS_REMAINING_ID, seconds)
             editor.apply()
+        }
+    private const val ALARM_SET_TIME_ID = "com.ciaramitaro.timer.backgrounded_time"
+
+    fun getAlarmSetTime(context: Context): Long{
+        val preferences = PreferenceManager.getDefaultSharedPreferences(context)
+        return  preferences.getLong(ALARM_SET_TIME_ID, 0)
+    }
+
+    fun setAlarmSetTime(time: Long, context: Context){
+        val editor = PreferenceManager.getDefaultSharedPreferences(context).edit()
+        editor.putLong(ALARM_SET_TIME_ID, time)
+        editor.apply()
         }
     }
